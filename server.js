@@ -1,0 +1,86 @@
+import http from 'node:http';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Store attempt counts for each endpoint
+const attemptCounts = {};
+
+const server = http.createServer((req, res) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    res.end();
+    return;
+  }
+
+  // Set CORS headers for all responses
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  res.setHeader('Content-Type', 'application/json');
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = url.pathname;
+
+  // Only handle /video/1 through /video/100
+  const videoMatch = path.match(/^\/video\/(0|[1-9][0-9]?|100)$/);
+  if (!videoMatch) {
+    res.writeHead(404);
+    res.end(JSON.stringify({
+      error: 'Invalid endpoint',
+      message: 'Only endpoints /video/1 through /video/100 are available'
+    }));
+    return;
+  }
+  const videosUrls = [
+    "https://www.pexels.com/download/video/17169505/",
+    "https://www.pexels.com/download/video/27831511/",
+    "https://www.pexels.com/download/video/15283135/",
+    "https://www.pexels.com/download/video/15283202/",
+    "https://www.pexels.com/download/video/15283199/",
+    "https://www.pexels.com/download/video/15283174/",
+    "https://www.pexels.com/download/video/15612910/",
+    "https://www.pexels.com/download/video/20422317/",
+    "https://www.pexels.com/download/video/14993748/"
+  ];
+
+
+  const videoId = videoMatch[1];
+  const endpointKey = `video-${videoId}`;
+  const videoUrl = videosUrls[videoId%videosUrls.length];
+  // Initialize or increment attempt count
+  attemptCounts[endpointKey] = (attemptCounts[endpointKey] || 0) + 1;
+  const currentAttempt = attemptCounts[endpointKey];
+
+  // First two attempts return "retry later"
+  if (currentAttempt <= 2) {
+    console.log(`request attempt ${currentAttempt} for video#${videoId} with url - ${videosUrls[videoId%videosUrls.length]} at ${Date.now()}`);
+    res.writeHead(202, {
+      'Retry-After': '40',
+      'delayed-fetch': 'no-check'
+    });
+    res.end(JSON.stringify({
+      status: 202,
+      message: 'Please retry later',
+      attempt: currentAttempt,
+      videoId
+    }));
+    return;
+  }
+
+  // Third attempt and beyond return success
+  console.log(`request attempt ${currentAttempt} for video#${videoId} with url - ${videosUrls[videoId%videosUrls.length]} at ${Date.now()} - Sucess`);
+  res.writeHead(307, {
+      'Location': videoUrl,
+  });
+  res.end();
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
