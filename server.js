@@ -25,6 +25,7 @@ const server = http.createServer((req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
+  const forceError = url.searchParams.get('forceError');
 
   // Only handle /video/1 through /video/100
   const videoMatch = path.match(/^\/video\/(0|[1-9][0-9]?|100)$/);
@@ -33,6 +34,24 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({
       error: 'Invalid endpoint',
       message: 'Only endpoints /video/1 through /video/100 are available'
+    }));
+    return;
+  }
+  if(forceError && forceError === '429'){
+    res.writeHead(429, {
+      'Retry-After': '5'
+    });
+    res.end(JSON.stringify({
+      status: 429,
+      message: 'Too many requests. Try later',
+    }));
+    return;
+  }
+  if(forceError && forceError === '404'){
+    res.writeHead(404);
+    res.end(JSON.stringify({
+      status: 404,
+      message: 'Not found',
     }));
     return;
   }
