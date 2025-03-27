@@ -1,0 +1,1 @@
+Sample Node server to mock some video response
