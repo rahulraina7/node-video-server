@@ -37,24 +37,6 @@ const server = http.createServer((req, res) => {
     }));
     return;
   }
-  if(forceError && forceError === '429'){
-    res.writeHead(429, {
-      'Retry-After': '5'
-    });
-    res.end(JSON.stringify({
-      status: 429,
-      message: 'Too many requests. Try later',
-    }));
-    return;
-  }
-  if(forceError && forceError === '404'){
-    res.writeHead(404);
-    res.end(JSON.stringify({
-      status: 404,
-      message: 'Not found',
-    }));
-    return;
-  }
   const videosUrls = [
     "https://www.pexels.com/download/video/17169505/",
     "https://www.pexels.com/download/video/27831511/",
@@ -71,9 +53,33 @@ const server = http.createServer((req, res) => {
   const videoId = videoMatch[1];
   const endpointKey = `video-${videoId}`;
   const videoUrl = videosUrls[videoId%videosUrls.length];
+
+  if(forceError && forceError === '429'){
+    console.log(`request for ${url} with 429 at ${Date.now()}`);
+    res.writeHead(429, {
+      'Retry-After': '5'
+    });
+    res.end(JSON.stringify({
+      status: 429,
+      message: 'Too many requests. Try later',
+    }));
+    return;
+  }
+  if(forceError && forceError === '404'){
+    console.log(`request for ${url} with 404 at ${Date.now()}`);
+    res.writeHead(404);
+    res.end(JSON.stringify({
+      status: 404,
+      message: 'Not found',
+    }));
+    return;
+  }
+
   // Initialize or increment attempt count
   attemptCounts[endpointKey] = (attemptCounts[endpointKey] || 0) + 1;
   const currentAttempt = attemptCounts[endpointKey];
+
+
 
   // First two attempts return "retry later"
   if (currentAttempt <= 2) {
