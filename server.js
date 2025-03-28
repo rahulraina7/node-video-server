@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
   const forceError = url.searchParams.get('forceError');
 
   // Only handle /video/1 through /video/100
-  const videoMatch = path.match(/^\/video\/(0|[1-9][0-9]?|100)$/);
+  const videoMatch = path.match(/^\/video\/([1-9]|[1-9]\d{1,3}|1\d{4}|20000)$/);
   if (!videoMatch) {
     res.writeHead(404);
     res.end(JSON.stringify({
