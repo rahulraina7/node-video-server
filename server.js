@@ -16,6 +16,7 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
+  console.log(JSON.stringify(req.headers));
 
   // Set CORS headers for all responses
   Object.entries(corsHeaders).forEach(([key, value]) => {
